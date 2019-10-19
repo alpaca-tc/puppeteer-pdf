@@ -1,0 +1,10 @@
+{
+  "name": "puppeteer-pdf",
+  "version": "1.0.0",
+  "description": "Convert HTML to PDF",
+  "main": "index.js",
+  "repository": "https://moneyforward/puppeteer-pdf",
+  "author": "alpaca-tc",
+  "license": "MIT",
+  "private": true
+}
