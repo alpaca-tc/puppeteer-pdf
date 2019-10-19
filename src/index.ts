@@ -1,10 +1,11 @@
 import express from "express";
 import morgan from "morgan";
 import { AddressInfo } from "net";
+import Joi from 'joi';
 
-import createPdf from "./createPdf";
+import createPdf, { formats } from "./createPdf";
 
-const app = express();
+export const app = express();
 
 app.use(express.urlencoded());
 app.use(morgan("dev"));
@@ -16,6 +17,22 @@ app.get("/api/health_check", (req, res) => {
 
 // PDF Generator
 app.post("/api/items", async (req, res, next) => {
+  const schema = Joi.object().keys({
+    source: Joi.string().optional(),
+    url: Joi.string().optional(),
+    timeout: Joi.number().optional(),
+    format: Joi.string().valid(...formats).optional(),
+  }).xor('source', 'url');
+
+  const result = schema.validate(req.body);
+
+  if (result.error) {
+    const { details } = result.error;
+    const message = details.map(i => i.message).join(',');
+
+    return res.status(422).json({ error: message })
+  }
+
   try {
     const { pdf, cleanup } = await createPdf({
       source: req.body.source,
