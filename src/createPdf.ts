@@ -15,18 +15,18 @@ export interface Options {
 }
 
 export const formats = [
-  'Letter',
-  'Legal',
-  'Tabloid',
-  'Ledger',
-  'A0',
-  'A1',
-  'A2',
-  'A3',
-  'A4',
-  'A5',
-  'A6',
-]
+  "Letter",
+  "Legal",
+  "Tabloid",
+  "Ledger",
+  "A0",
+  "A1",
+  "A2",
+  "A3",
+  "A4",
+  "A5",
+  "A6",
+];
 
 const defaultOptions = {
   timeout: 3000,

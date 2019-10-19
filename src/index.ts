@@ -1,7 +1,7 @@
 import express from "express";
+import Joi from "joi";
 import morgan from "morgan";
 import { AddressInfo } from "net";
-import Joi from 'joi';
 
 import createPdf, { formats } from "./createPdf";
 
@@ -22,15 +22,15 @@ app.post("/api/items", async (req, res, next) => {
     url: Joi.string().optional(),
     timeout: Joi.number().optional(),
     format: Joi.string().valid(...formats).optional(),
-  }).xor('source', 'url');
+  }).xor("source", "url");
 
   const result = schema.validate(req.body);
 
   if (result.error) {
     const { details } = result.error;
-    const message = details.map(i => i.message).join(',');
+    const message = details.map((i) => i.message).join(",");
 
-    return res.status(422).json({ error: message })
+    return res.status(422).json({ error: message });
   }
 
   try {
