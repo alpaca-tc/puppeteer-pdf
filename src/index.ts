@@ -1,9 +1,9 @@
-import Debug from "debug";
 import express from "express";
 import { AddressInfo } from "net";
-import createPdf from "./createPdf";
 
-const debug = Debug("app");
+import createPdf from "./createPdf";
+import Debug from "./utils/Debug";
+
 const error = Debug("app:error");
 const app = express();
 
@@ -16,16 +16,19 @@ app.get("/api/health_check", (req, res) => {
 
 // PDF Generator
 app.post("/api/items", async (req, res, next) => {
-  createPdf({
-    source: req.body.source,
-    format: req.body.format,
-    timeout: req.body.timeout,
-  }).then(async (pdf) => {
+  try {
+    const { pdf, cleanup } = await createPdf({
+      source: req.body.source,
+      format: req.body.format,
+      timeout: req.body.timeout,
+    });
+
     res.send(pdf);
-  }).catch(async (err) => {
+    cleanup();
+  } catch (err) {
     error(err);
     next(err);
-  });
+  }
 });
 
 // start the Express server
