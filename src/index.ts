@@ -3,9 +3,7 @@ import morgan from "morgan";
 import { AddressInfo } from "net";
 
 import createPdf from "./createPdf";
-import Debug from "./utils/Debug";
 
-const error = Debug("app:error");
 const app = express();
 
 app.use(express.urlencoded());
@@ -28,7 +26,6 @@ app.post("/api/items", async (req, res, next) => {
     res.send(pdf);
     cleanup();
   } catch (err) {
-    error(err);
     next(err);
   }
 });
