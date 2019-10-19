@@ -27,11 +27,14 @@ export default async (userOptions: Options) => {
   let browser;
 
   try {
-    browser = await puppeteer.launch(
+    const launchOptions = compact(
       {
+        executablePath: process.env.PUPPETEER_EXECUTABLE_PATH,
         args: ["--no-sandbox", "--disable-setuid-sandbox", "--disable-gpu"],
-      },
-    );
+      }
+    )
+
+    browser = await puppeteer.launch(launchOptions);
 
     const page = await browser.newPage();
     await page.goto(`file://${path}`, { timeout: options.timeout, waitUntil: "networkidle2" });
