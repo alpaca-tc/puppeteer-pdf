@@ -1,4 +1,5 @@
 import express from "express";
+import morgan from "morgan";
 import { AddressInfo } from "net";
 
 import createPdf from "./createPdf";
@@ -8,6 +9,7 @@ const error = Debug("app:error");
 const app = express();
 
 app.use(express.urlencoded());
+app.use(morgan("dev"));
 
 // health checker
 app.get("/api/health_check", (req, res) => {
