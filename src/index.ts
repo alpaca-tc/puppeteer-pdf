@@ -1,34 +1,40 @@
 import Debug from "debug";
 import express from "express";
+import { AddressInfo } from "net";
 import createPdf from "./createPdf";
 
 const debug = Debug("app");
+const error = Debug("app:error");
 const app = express();
-const port = 8080; // default port to listen
 
 app.use(express.urlencoded());
 
-// define a route handler for the default home page
+// health checker
 app.get("/api/health_check", (req, res) => {
   res.sendStatus(200);
 });
 
-// define a route handler for the default home page
+// PDF Generator
 app.post("/api/items", async (req, res, next) => {
-  const pdf = await createPdf({
+  createPdf({
     source: req.body.source,
     format: req.body.format,
     timeout: req.body.timeout,
-  });
-
-  try {
+  }).then(async (pdf) => {
     res.send(pdf);
-  } catch (error) {
-    next(error);
-  }
+  }).catch(async (err) => {
+    error(err);
+    next(err);
+  });
 });
 
 // start the Express server
-app.listen(port, () => {
-  debug(`server started at http://localhost:${port}`);
+const server = app.listen(process.env.PORT || 8080, () => {
+  const { address, port } = server.address() as AddressInfo;
+
+  if (process.env.TIMEOUT) {
+    server.timeout = parseInt(process.env.TIMEOUT, 10);
+  }
+
+  process.stdout.write(`Server started at http://${address}:${port}/\n`);
 });

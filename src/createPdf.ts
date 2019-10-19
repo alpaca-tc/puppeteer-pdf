@@ -2,11 +2,11 @@ import Debug from "debug";
 import fs from "fs";
 import puppeteer from "puppeteer";
 import tmp from "tmp-promise";
-import compact from './utils/compact';
+import compact from "./utils/compact";
 
 const debug = Debug("createPdf");
 
-interface Options {
+export interface Options {
   source: string;
   format: string;
   timeout?: number;
@@ -16,12 +16,12 @@ interface Options {
 const defaultOptions = {
   timeout: 3000,
   waitFor: 250,
-};
+} as Options;
 
 export default async (userOptions: Options) => {
   const options = Object.assign({}, defaultOptions, compact(userOptions)) as Options;
 
-  const { fd, path } = await tmp.file({ postfix: '.html' });
+  const { fd, path } = await tmp.file({ postfix: ".html" });
   fs.writeSync(fd, options.source);
 
   let browser;
