@@ -7,8 +7,9 @@ import Debug from "./utils/Debug";
 const debug = Debug("createPdf");
 
 export interface Options {
-  source: string;
   format: string;
+  source?: string;
+  url?: string;
   timeout?: number;
   waitFor?: number;
 }
@@ -20,9 +21,15 @@ const defaultOptions = {
 
 export default async (userOptions: Options) => {
   const options = Object.assign({}, defaultOptions, compact(userOptions)) as Options;
-
   const { fd, path, cleanup } = await tmp.file({ postfix: ".html" });
-  fs.writeSync(fd, options.source);
+  let href;
+
+  if (options.source) {
+    fs.writeSync(fd, options.source);
+    href = `file://${path}`;
+  } else {
+    href = options.url;
+  }
 
   let browser;
 
@@ -30,14 +37,19 @@ export default async (userOptions: Options) => {
     const launchOptions = compact(
       {
         executablePath: process.env.PUPPETEER_EXECUTABLE_PATH,
-        args: ["--no-sandbox", "--disable-setuid-sandbox", "--disable-gpu"],
-      }
-    )
+        args: [
+          "--no-sandbox",
+          "--disable-setuid-sandbox",
+          "--disable-gpu",
+          '--user-agent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/65.0.3312.0 Safari/537.36"',
+        ],
+      },
+    );
 
     browser = await puppeteer.launch(launchOptions);
 
     const page = await browser.newPage();
-    await page.goto(`file://${path}`, { timeout: options.timeout, waitUntil: "networkidle2" });
+    await page.goto(href, { timeout: options.timeout, waitUntil: "networkidle2" });
     await page.waitFor(options.waitFor);
 
     // https://github.com/GoogleChrome/puppeteer/blob/master/docs/api.md#pagepdfoptions

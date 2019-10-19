@@ -19,6 +19,7 @@ app.post("/api/items", async (req, res, next) => {
   try {
     const { pdf, cleanup } = await createPdf({
       source: req.body.source,
+      url: req.body.url,
       format: req.body.format,
       timeout: req.body.timeout,
     });
