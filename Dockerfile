@@ -4,7 +4,6 @@ FROM node:10-slim
 
 ENV APP_DIR /usr/src/app
 ENV FONT_DIR /usr/share/fonts
-ENV NODE_ENV production
 ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD true
 ENV PUPPETEER_EXECUTABLE_PATH /usr/bin/google-chrome-unstable
 
@@ -34,17 +33,18 @@ RUN groupadd -r app && useradd -r -g app -G audio,video app \
     && chown -R app:app /home/app \
     && chown -R app:app $APP_DIR
 
-COPY --chown=app:app package.json package.json
-COPY --chown=app:app yarn.lock yarn.lock
-
-# Install puppeteer so it's available in the container.
-RUN yarn install
 COPY --chown=app:app . .
 
-RUN yarn run build
+# Install puppeteer so it's available in the container.
+RUN yarn install --frozen-lockfile --no-cache \
+      && NODE_ENV=production yarn run build \
+      && rm -rf node_modules src \
+      && yarn install --frozen-lockfile --no-cache --production \
+      && yarn cache clean
 
 USER app:app
 
+ENV NODE_ENV production
 EXPOSE 8080
 
 CMD ["yarn", "run", "start"]
