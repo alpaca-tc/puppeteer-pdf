@@ -1,0 +1,61 @@
+version: 2.1
+
+executors:
+  node:
+    working_directory: ~/workspace
+    docker:
+      - image: circleci/node:10.16
+
+jobs:
+  build:
+    executor: node
+    steps:
+      - run:
+          name: System information
+          command: |
+            echo "Node $(node -v)"
+            echo "Yarn v$(yarn --version)"
+      - checkout
+      - restore_cache:
+          keys:
+          - v1-yarn-dependencies-{{ checksum "yarn.lock" }}-{{  checksum ".node-version" }}
+          - v1-yarn-dependencies-{{ checksum "yarn.lock" }}
+          - v1-yarn-dependencies-
+      - run: yarn install
+      - save_cache:
+          key: v1-yarn-dependencies-{{ checksum "yarn.lock" }}-{{  checksum ".node-version" }}
+          paths:
+            - node_modules
+      - run:
+          name: Remove unused files
+          command: rm -rf .git
+      - persist_to_workspace:
+          root: ./
+          paths:
+            - ./
+
+  run_tslint:
+    executor: node
+    steps:
+      - attach_workspace:
+          at: ~/workspace
+      - run: yarn run tslint
+
+  run_jest:
+    executor: node
+    steps:
+      - attach_workspace:
+          at: ~/workspace
+      - run: yarn run test
+
+workflows:
+  version: 2
+  build-test:
+    jobs:
+      - build
+      - run_jest:
+          requires:
+            - build
+      - run_tslint:
+          requires:
+            - build
