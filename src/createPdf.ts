@@ -29,7 +29,7 @@ export const formats = [
 ];
 
 const defaultOptions = {
-  timeout: 3000,
+  timeout: 30000,
   waitFor: 250,
 } as Options;
 

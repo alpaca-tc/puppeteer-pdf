@@ -1,37 +1,64 @@
 # https://github.com/GoogleChrome/puppeteer/blob/master/docs/troubleshooting.md#running-puppeteer-in-docker
 
-FROM node:10-slim
+FROM alpine:edge
 
 ENV APP_DIR /usr/src/app
 ENV FONT_DIR /usr/share/fonts
 ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD true
-ENV PUPPETEER_EXECUTABLE_PATH /usr/bin/google-chrome-unstable
+ENV PUPPETEER_EXECUTABLE_PATH /usr/bin/chromium-browser
 
 WORKDIR $APP_DIR
 
-# Install latest chrome dev package and fonts to support major charsets (Chinese, Japanese, Arabic, Hebrew, Thai and a few others)
-# Note: this installs the necessary libs to make the bundled version of Chromium that Puppeteer
-# installs, work.
-RUN wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add - \
-    && sh -c 'echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google.list' \
-    && apt-get update \
-    && apt-get install -y google-chrome-unstable fonts-ipafont-gothic fonts-ipafont-mincho fonts-wqy-zenhei fonts-thai-tlwg fonts-kacst fonts-freefont-ttf unzip \
-      --no-install-recommends \
-    && rm -rf /var/lib/apt/lists/*
+RUN apk update \
+    && apk upgrade \
+    && apk add --no-cache \
+      chromium \
+      nss \
+      freetype \
+      freetype-dev \
+      harfbuzz \
+      ca-certificates \
+      ttf-freefont \
+      nodejs \
+      yarn
 
-# Install noto font
+# noto font
 RUN mkdir -p /tmp/noto \
-    && curl -LsS https://noto-website.storage.googleapis.com/pkgs/NotoSansCJKjp-hinted.zip > /tmp/noto/font.zip \
+    && wget https://noto-website.storage.googleapis.com/pkgs/NotoSansCJKjp-hinted.zip -O /tmp/noto/font.zip \
     && unzip /tmp/noto/font.zip -d /tmp/noto \
     && find /tmp/noto/ -type f -not -name '*otf' -and -not -name '*otc' | xargs rm -r \
-    && mv /tmp/noto $FONT_DIR/opentype/ \
-    && chmod 644 -R $FONT_DIR/opentype/noto \
-    && fc-cache -fv
+    && mkdir -p $FONT_DIR/opentype/NotoSansCJKjp \
+    && cp /tmp/noto/* $FONT_DIR/opentype/NotoSansCJKjp \
+    && chmod 644 -R $FONT_DIR/opentype/NotoSansCJKjp
 
-RUN groupadd -r app && useradd -r -g app -G audio,video app \
-    && mkdir -p /home/app/Downloads \
+# microsoft-true-font
+RUN apk --no-cache add msttcorefonts-installer fontconfig \
+    && update-ms-fonts
+
+# Google fonts
+RUN mkdir -p /tmp/google-fonts \
+  && wget https://github.com/google/fonts/archive/master.tar.gz -O /tmp/google-fonts/fonts.tar.gz \
+  && cd /tmp/google-fonts \
+  && tar -xf fonts.tar.gz \
+  && mkdir -p $FONT_DIR/truetype/google-fonts \
+  && find $PWD/fonts-master/ -name "*.ttf" -exec install -m644 {} $FONT_DIR/truetype/google-fonts/ \; || return 1 \
+  && rm -rf /tmp/google-fonts
+
+# IPA font
+RUN mkdir -p /tmp/ipa-fonts \
+  && wget https://oscdl.ipa.go.jp/IPAexfont/IPAexfont00401.zip -O /tmp/ipa-fonts/font.zip \
+  && unzip /tmp/ipa-fonts/font.zip -d /tmp/ipa-fonts \
+  && mkdir -p $FONT_DIR/truetype/ipa-fonts \
+  && find /tmp/ipa-fonts/ -name "*.ttf" -exec install -m644 {} $FONT_DIR/truetype/ipa-fonts/ \; || return 1 \
+  && rm -rf /tmp/ipa-fonts
+
+# Reload fonts
+RUN fc-cache -f && rm -rf /var/cache/*
+
+RUN addgroup -S app && adduser -S -g app app \
+    && mkdir -p /home/app/Downloads /app \
     && chown -R app:app /home/app \
-    && chown -R app:app $APP_DIR
+    && chown -R app:app /app
 
 COPY --chown=app:app . .
 
